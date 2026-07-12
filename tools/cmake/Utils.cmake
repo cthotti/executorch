@@ -115,7 +115,18 @@ function(get_torch_base_path outVar)
             "Exit code: ${_tmp_torch_path_result}"
     )
     message("Output:\n${_tmp_torch_path}")
-    message(FATAL_ERROR "Error:\n${_tmp_torch_path_error}")
+    if(_tmp_torch_path_error MATCHES "NoneType.*submodule_search_locations")
+      message(FATAL_ERROR
+        "torch was not found by ${PYTHON_EXECUTABLE}.\n"
+        "If installing via 'pip install -e .', this usually means pip's "
+        "build isolation is hiding your already-installed torch from this "
+        "build step. Retry with:\n"
+        "    pip install -e . --no-build-isolation\n"
+        "(Original error:\n${_tmp_torch_path_error})"
+      )
+    else()
+      message(FATAL_ERROR "Error:\n${_tmp_torch_path_error}")
+    endif()
   endif()
   set(${outVar}
       ${_tmp_torch_path}
