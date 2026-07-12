@@ -1,0 +1,9 @@
+# Runtime dependencies for examples/qualcomm/oss_scripts/llama, beyond what
+# core executorch and backends/qualcomm/requirements.txt already declare.
+# Needed for: HF weight conversion (safetensors, transformers, torchtune)
+# and calibration/eval via lm_eval (--calib_tasks / --eval_tasks).
+safetensors
+torchtune
+transformers
+lm_eval
+accelerate
