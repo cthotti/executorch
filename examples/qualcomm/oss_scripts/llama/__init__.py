@@ -11,38 +11,70 @@ from enum import Enum
 from functools import partial
 from typing import Callable, Dict, Optional, Sequence, Type, Union
 
-from executorch.examples.models.codegen import (
-    convert_weights as convert_codegen_weights,
-)
-from executorch.examples.models.gemma import convert_weights as convert_gemma_weights
-from executorch.examples.models.gemma2 import convert_weights as convert_gemma2_weights
-from executorch.examples.models.gemma3 import convert_weights as convert_gemma3_weights
+import importlib
+import warnings
 
-from executorch.examples.models.glm import convert_weights as convert_glm_weights
-from executorch.examples.models.granite import (
-    convert_weights as convert_granite_weights,
+
+def _safe_import_converter(module_name, model_label):
+    """Import a model's convert_weights, tolerating broken optional deps.
+
+    Some models' converters transitively depend on packages with API drift
+    (e.g. torchtune -> torchao). A broken converter for an unused model
+    shouldn't block every decoder_model from loading.
+    """
+    try:
+        module = importlib.import_module(module_name)
+        return module.convert_weights
+    except Exception as e:
+        warnings.warn(
+            f"Could not import weight converter for '{model_label}' "
+            f"({module_name}): {e}. This model will be unavailable; other "
+            f"decoder_model entries are unaffected."
+        )
+        return None
+
+
+convert_codegen_weights = _safe_import_converter(
+    "executorch.examples.models.codegen", "codegen"
 )
-from executorch.examples.models.granite_speech import (
-    convert_weights as convert_granite_speech_weights,
+convert_gemma_weights = _safe_import_converter(
+    "executorch.examples.models.gemma", "gemma"
 )
-from executorch.examples.models.internvl3 import (
-    convert_weights as convert_internvl3_weights,
+convert_gemma2_weights = _safe_import_converter(
+    "executorch.examples.models.gemma2", "gemma2"
 )
-from executorch.examples.models.phi_4_mini import (
-    convert_weights as convert_phi_4_mini_weights,
+convert_gemma3_weights = _safe_import_converter(
+    "executorch.examples.models.gemma3", "gemma3"
 )
-from executorch.examples.models.qwen2_5 import (
-    convert_weights as convert_qwen2_5_weights,
+convert_glm_weights = _safe_import_converter(
+    "executorch.examples.models.glm", "glm"
 )
-from executorch.examples.models.qwen3 import convert_weights as convert_qwen3_weights
-from executorch.examples.models.smollm2 import (
-    convert_weights as convert_smollm2_weights,
+convert_granite_weights = _safe_import_converter(
+    "executorch.examples.models.granite", "granite"
 )
-from executorch.examples.models.smollm3 import (
-    convert_weights as convert_smollm3_weights,
+convert_granite_speech_weights = _safe_import_converter(
+    "executorch.examples.models.granite_speech", "granite_speech"
 )
-from executorch.examples.models.smolvlm import (
-    convert_weights as convert_smolvlm_weights,
+convert_internvl3_weights = _safe_import_converter(
+    "executorch.examples.models.internvl3", "internvl3"
+)
+convert_phi_4_mini_weights = _safe_import_converter(
+    "executorch.examples.models.phi_4_mini", "phi_4_mini"
+)
+convert_qwen2_5_weights = _safe_import_converter(
+    "executorch.examples.models.qwen2_5", "qwen2_5"
+)
+convert_qwen3_weights = _safe_import_converter(
+    "executorch.examples.models.qwen3", "qwen3"
+)
+convert_smollm2_weights = _safe_import_converter(
+    "executorch.examples.models.smollm2", "smollm2"
+)
+convert_smollm3_weights = _safe_import_converter(
+    "executorch.examples.models.smollm3", "smollm3"
+)
+convert_smolvlm_weights = _safe_import_converter(
+    "executorch.examples.models.smolvlm", "smolvlm"
 )
 
 from executorch.examples.qualcomm.oss_scripts.llama.decoder_constants import (
@@ -511,6 +543,25 @@ class Qwen3_1_7B(LLMModelConfig):
     repo_id: str = "Qwen/Qwen3-1.7B"
     params_path: str = os.path.join(
         BASE_DIR, "../../../models/qwen3/config/1_7b_config.json"
+    )
+    convert_weights = convert_qwen3_weights
+    transform_weight = False
+    instruct_model = True
+    num_sharding = 1
+    masked_softmax = True
+    seq_mse_candidates = 0
+    r1 = False
+    r2 = False
+    r3 = True
+    quant_recipe = Qwen3_1_7BQuantRecipe
+
+
+@register_llm_model("qwen3-4b")
+@dataclass(init=False, frozen=True)
+class Qwen3_4B(LLMModelConfig):
+    repo_id: str = "Qwen/Qwen3-4B"
+    params_path: str = os.path.join(
+        BASE_DIR, "../../../models/qwen3/config/4b_config.json"
     )
     convert_weights = convert_qwen3_weights
     transform_weight = False
